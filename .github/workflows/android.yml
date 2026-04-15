@@ -23,7 +23,9 @@ jobs:
           java-version: '17'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npx expo install --fix
 
       - name: Create placeholder assets
         run: |
@@ -35,7 +37,7 @@ jobs:
           [ -f assets/images/favicon.png ] || echo $BASE64_PNG | base64 -d > assets/images/favicon.png
 
       - name: Prebuild Expo app
-        run: npx expo prebuild --platform android --clean
+        run: npx expo prebuild --platform android --clean --no-install
 
       - name: Build APK
         working-directory: android
