@@ -1,27 +1,36 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withRepeat,
-  withSequence,
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  withRepeat, 
   withTiming,
+  withSequence
 } from 'react-native-reanimated';
-import { Player } from '../utils/gameLogic';
 
 interface CellProps {
-  index: number;
-  value: Player;
-  onPress: (index: number) => void;
-  disabled: boolean;
+  value: 'X' | 'O' | null;
+  onPress: () => void;
   isWinningCell: boolean;
-  size: number; // Added to strictly control the square's dimensions
+  disabled: boolean;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+// أشكال مرسومة برمجياً لتعمل 100% بدون إنترنت
+const CustomX = () => (
+  <View style={styles.shapeContainer}>
+    <View style={[styles.xLine, { transform: [{ rotate: '45deg' }] }]} />
+    <View style={[styles.xLine, { transform: [{ rotate: '-45deg' }] }]} />
+  </View>
+);
 
-export default function Cell({ index, value, onPress, disabled, isWinningCell, size }: CellProps) {
+const CustomO = () => (
+  <View style={styles.shapeContainer}>
+    <View style={styles.oCircle} />
+  </View>
+);
+
+export default function Cell({ value, onPress, isWinningCell, disabled }: CellProps) {
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -33,98 +42,101 @@ export default function Cell({ index, value, onPress, disabled, isWinningCell, s
     } else {
       scale.value = 0;
       opacity.value = 0;
+      pulse.value = 1;
     }
-  }, [value, scale, opacity]);
+  }, [value]);
 
   useEffect(() => {
     if (isWinningCell) {
       pulse.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 400 }),
+          withTiming(1.15, { duration: 400 }),
           withTiming(1, { duration: 400 })
         ),
         -1,
         true
       );
     } else {
-      pulse.value = withTiming(1, { duration: 300 });
+      pulse.value = 1;
     }
-  }, [isWinningCell, pulse]);
+  }, [isWinningCell]);
 
-  const animatedContainerStyle = useAnimatedStyle(() => {
+  const animatedStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: isWinningCell 
-        ? (value === 'X' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(251, 113, 133, 0.25)') 
-        : '#1E293B', // Solid background so the square is always clearly visible
-      transform: [{ scale: isWinningCell ? pulse.value : 1 }],
-      borderColor: isWinningCell 
-        ? (value === 'X' ? '#38BDF8' : '#FB7185') 
-        : '#334155',
-    };
-  });
-
-  const animatedTextStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
+      transform: [
+        { scale: scale.value * pulse.value }
+      ],
       opacity: opacity.value,
     };
   });
 
-  const textStyle = value === 'X' ? styles.textX : styles.textO;
-
   return (
-    <AnimatedPressable
-      style={StyleSheet.flatten([
-        styles.cell,
-        {
-          width: size,
-          height: size,
-        },
-        animatedContainerStyle
-      ])}
-      onPress={() => onPress(index)}
+    <TouchableOpacity 
+      style={[styles.cell, isWinningCell && styles.winningCell]} 
+      onPress={onPress}
       disabled={disabled || value !== null}
+      activeOpacity={0.7}
     >
-      <Animated.Text
-        style={StyleSheet.flatten([
-          styles.text,
-          textStyle,
-          animatedTextStyle,
-        ])}
-      >
-        {value}
-      </Animated.Text>
-    </AnimatedPressable>
+      <Animated.View style={StyleSheet.flatten([styles.iconContainer, animatedStyle])}>
+        {value === 'X' && <CustomX />}
+        {value === 'O' && <CustomO />}
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   cell: {
+    width: '30%',
+    aspectRatio: 1,
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 2,
+    margin: '1.5%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  winningCell: {
+    backgroundColor: '#334155',
+    borderColor: '#475569',
+    borderWidth: 2,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shapeContainer: {
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  xLine: {
+    position: 'absolute',
+    width: 65,
+    height: 8,
+    backgroundColor: '#38BDF8',
+    borderRadius: 4,
+    shadowColor: '#38BDF8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
     elevation: 5,
   },
-  text: {
-    fontSize: 54,
-    fontWeight: '900',
-    fontFamily: 'System',
-  },
-  textX: {
-    color: '#38BDF8',
-    textShadowColor: 'rgba(56, 189, 248, 0.8)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
-  textO: {
-    color: '#FB7185',
-    textShadowColor: 'rgba(251, 113, 133, 0.8)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
+  oCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 8,
+    borderColor: '#F472B6',
+    shadowColor: '#F472B6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 5,
+  }
 });
