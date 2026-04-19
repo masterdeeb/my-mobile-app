@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "حاسبة MRD",
+    "name": "FocusTask Arabic",
     "slug": "react-native-ai-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -33,6 +33,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "founder": "MRD"
+    "description": "A premium multilingual task manager with support for English and Arabic locales."
   }
 }
